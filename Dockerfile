@@ -1,19 +1,30 @@
-FROM alpine:3.6 as build
+# The image we keep
+FROM alpine:3.6
 MAINTAINER Liu Hao <sniperliuhao@gmail.com>
-
-RUN apk add --update --no-cache ca-certificates git
-
-ENV VERSION v2.7.2
-ENV FILENAME helm-${VERSION}-linux-amd64.tar.gz
 
 WORKDIR /
 
-RUN apk add --update -t deps curl tar gzip
-RUN curl -L http://storage.googleapis.com/kubernetes-helm/${FILENAME} | tar zxv -C /tmp
+ENV HELM_VERSION v2.7.2
+ENV HELM_S3_VERSION v0.4.1
 
-# The image we keep
-FROM alpine:3.6
+# download apk index
+RUN apk add --update
 
-RUN apk add --update --no-cache git ca-certificates
+RUN apk add --virtual .runtime-utils ca-certificates
+RUN apk add --virtual .builtin-utils curl bash
 
-COPY --from=build /tmp/linux-amd64/helm /bin/helm
+# helm
+RUN set -ex \
+    && curl -sSL https://storage.googleapis.com/kubernetes-helm/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz \
+    && mv linux-amd64/helm /usr/local/bin/helm \
+    && rm -rf linux-amd64 \
+    && helm init --client-only
+
+# s3 plugins
+RUN apk add --virtual .helm-s3-build-deps git make bash \
+    && helm plugin install https://github.com/hypnoglow/helm-s3.git --version $HELM_S3_VERSION \
+    && apk del --purge .helm-s3-build-deps
+
+# cleanup
+RUN apk del --purge .builtin-utils \
+    && rm -rf /var/cache/apk/*

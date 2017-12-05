@@ -1,4 +1,4 @@
 # docker-helm
-Docker image containing kubernetes helm and git.
+Docker image containing kubernetes helm and helm-s3.
 
-Copied from [linkyard/docker-helm](https://github.com/linkyard/docker-helm), but removed entrypoint to be used with gitlab-ci
+Usage: `docker run --rm -it --env AWS_ACCESS_KEY_ID=XXXX --env AWS_SECRET_ACCESS_KEY=XXXX --env AWS_DEFAULT_REGION=XXX sniperliu/docker-helm:2.7.2 /bin/sh`
